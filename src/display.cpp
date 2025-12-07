@@ -650,7 +650,7 @@ Opt_Coord drawOptions(
         if (labelCharLimit < 1) labelCharLimit = 1;
 
         char txt[labelCharLimit];
-        snprintf(txt, sizeof(txt), "%-*s", labelCharLimit, opt[optionIndex].label.c_str());
+        snprintf(txt, sizeof(txt), "%-*s", labelCharLimit, opt[optionIndex].getDisplayLabel().c_str());
 
         tft->setCursor(labelX, rowTop);
         tft->setTextColor(color, bgcolor);
@@ -833,7 +833,7 @@ int loopOptions(std::vector<Option> &options, bool bright, uint16_t al, uint16_t
             redraw = false;
         }
         if (index >= 0 && index < static_cast<int>(options.size())) {
-            String txt = options[index].label;
+            String txt = options[index].getDisplayLabel();
             displayScrollingText(txt, coord);
         }
 
@@ -907,6 +907,24 @@ int loopOptions(std::vector<Option> &options, bool bright, uint16_t al, uint16_t
 #endif
 #endif
     WAITING:
+        /* Left/Right navigation for multi-choice items ONLY */
+        /* For regular items, left/right fall through to be handled as PrevPress/NextPress below */
+        if (index >= 0 && index < static_cast<int>(options.size())) {
+            if (options[index].isMultiChoice()) {
+                // Multi-choice item: left/right change the choice, consume the press
+                if (check(LeftPress)) {
+                    options[index].prevChoice();
+                    PrevPress = false; // Prevent navigation
+                    redraw = true;
+                }
+                if (check(RightPress)) {
+                    options[index].nextChoice();
+                    NextPress = false; // Prevent navigation
+                    redraw = true;
+                }
+            }
+        }
+
         /* DW Btn to next item */
         if (check(NextPress) || check(DownPress)) {
             index++;
@@ -1156,9 +1174,10 @@ RESTART:
     if (refine) {
         refine = false;
         std::vector<Option> opt = {
-            {order_by == "downloads" ? "Order by name" : "Order by downloads",
+            {"Sort",
+             {"downloads", "name", "update"},
              [&]() {
-                 order_by = order_by == "downloads" ? "name" : "downloads";
+                 // Get the current selected sort method from the option
                  refine = true;
              }                                                                                          },
             {star == true ? "Starred -> Off" : "Starred -> On",
@@ -1174,7 +1193,16 @@ RESTART:
              }                                                                                          },
             {"Back to list",                                                   [&]() { refine = false; }}
         };
+        // Set the initial sort method selection
+        for (int i = 0; i < opt[0].choices.size(); i++) {
+            if (opt[0].choices[i] == order_by) {
+                opt[0].current_choice_index = i;
+                break;
+            }
+        }
         loopOptions(opt);
+        // Update order_by based on the selected choice
+        order_by = opt[0].getCurrentChoice();
     }
     if (!returnToMenu && index >= 0) goto RESTART;
     doc.clear();

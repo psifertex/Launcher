@@ -170,6 +170,8 @@ void InputHandler(void) {
     static bool next = false;
     static bool up = false;
     static bool down = false;
+    static bool left = false;
+    static bool right = false;
     static bool esc = false;
     static bool del = false;
 
@@ -189,10 +191,13 @@ void InputHandler(void) {
                 sel = false; // avoid multiple selections
                 esc = false; // avoid multiple escapes
             }
-            NextPress = next;
-            PrevPress = prev;
             UpPress = up;
             DownPress = down;
+            LeftPress = left;
+            RightPress = right;
+            // Map all directions to prev/next for backwards compatibility
+            PrevPress = up || left;
+            NextPress = down || right;
             SelPress = sel | SelPress; // in case G0 is pressed
             EscPress = esc;
             if (del) {
@@ -249,11 +254,17 @@ void InputHandler(void) {
             key.enter = pressed;
             if (pressed) key.word.emplace_back(KEY_ENTER);
             sel = pressed;
-        } else if (keyVal == ',' || keyVal == ';') {
-            prev = pressed;
+        } else if (keyVal == ',') {
+            left = pressed;
             if (pressed) key.word.emplace_back(keyVal);
-        } else if (keyVal == '/' || keyVal == '.') {
-            next = pressed;
+        } else if (keyVal == ';') {
+            up = pressed;
+            if (pressed) key.word.emplace_back(keyVal);
+        } else if (keyVal == '/') {
+            right = pressed;
+            if (pressed) key.word.emplace_back(keyVal);
+        } else if (keyVal == '.') {
+            down = pressed;
             if (pressed) key.word.emplace_back(keyVal);
         } else if (keyVal == KEY_TAB) {
             if (pressed) key.word.emplace_back(KEY_TAB);
@@ -274,10 +285,13 @@ void InputHandler(void) {
             key.pressed = true;
         }
         KeyStroke = key;
-        NextPress = next;
-        PrevPress = prev;
         UpPress = up;
         DownPress = down;
+        LeftPress = left;
+        RightPress = right;
+        // Map all directions to prev/next for backwards compatibility
+        PrevPress = up || left;
+        NextPress = down || right;
         SelPress = sel;
         EscPress = esc;
         tm = millis();
@@ -306,9 +320,14 @@ void InputHandler(void) {
         if (status.fn) key.fn = true;
         key.pressed = true;
         KeyStroke = key;
-        if (Keyboard.isKeyPressed(',') || Keyboard.isKeyPressed(';')) PrevPress = true;
+        if (Keyboard.isKeyPressed(',')) LeftPress = true;
+        if (Keyboard.isKeyPressed(';')) UpPress = true;
         if (Keyboard.isKeyPressed('`') || Keyboard.isKeyPressed(KEY_BACKSPACE)) EscPress = true;
-        if (Keyboard.isKeyPressed('/') || Keyboard.isKeyPressed('.')) NextPress = true;
+        if (Keyboard.isKeyPressed('/')) RightPress = true;
+        if (Keyboard.isKeyPressed('.')) DownPress = true;
+        // Map all directions to prev/next for backwards compatibility
+        if (LeftPress || UpPress) PrevPress = true;
+        if (RightPress || DownPress) NextPress = true;
         if (Keyboard.isKeyPressed(KEY_ENTER)) SelPress = true;
         if (!KeyStroke.pressed) return;
         String keyStr = "";

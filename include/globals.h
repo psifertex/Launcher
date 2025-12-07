@@ -23,9 +23,40 @@ struct Option {
     String label;
     std::function<void()> operation;
     uint16_t color;
+    std::vector<String> choices;
+    int current_choice_index;
 
     Option(String lbl = "", const std::function<void()> &op = nullptr, uint16_t color = NO_COLOR)
-        : label(lbl), operation(op), color(color) {}
+        : label(lbl), operation(op), color(color), current_choice_index(0) {}
+
+    Option(String lbl, std::vector<String> choices_list, const std::function<void()> &op = nullptr, uint16_t color = NO_COLOR)
+        : label(lbl), operation(op), color(color), choices(choices_list), current_choice_index(0) {}
+
+    bool isMultiChoice() const { return !choices.empty(); }
+
+    String getCurrentChoice() const {
+        if (choices.empty()) return "";
+        return choices[current_choice_index];
+    }
+
+    void nextChoice() {
+        if (!choices.empty()) {
+            current_choice_index = (current_choice_index + 1) % choices.size();
+        }
+    }
+
+    void prevChoice() {
+        if (!choices.empty()) {
+            current_choice_index = (current_choice_index - 1 + choices.size()) % choices.size();
+        }
+    }
+
+    String getDisplayLabel() const {
+        if (isMultiChoice()) {
+            return label + ": [< " + getCurrentChoice() + " >]";
+        }
+        return label;
+    }
 };
 
 extern std::vector<Option> options;
@@ -113,6 +144,8 @@ extern volatile bool NextPress;
 extern volatile bool PrevPress;
 extern volatile bool UpPress;
 extern volatile bool DownPress;
+extern volatile bool LeftPress;
+extern volatile bool RightPress;
 extern volatile bool SelPress;
 extern volatile bool EscPress;
 extern volatile bool AnyKeyPress;
@@ -122,6 +155,8 @@ inline void resetGlobals(void) {
     PrevPress = false;
     UpPress = false;
     DownPress = false;
+    LeftPress = false;
+    RightPress = false;
     SelPress = false;
     EscPress = false;
     AnyKeyPress = false;

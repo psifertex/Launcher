@@ -39,7 +39,7 @@ This document details the implementation of M5Stack Cardputer ADV support for th
 | Function | Key |
 |----------|-------------------|
 | **Previous** | `,` (←) or `;` (↑) |
-| **Next** | `.` (→) or `/` (↓) |
+| **Next** | `/` (→) or `.` (↓) |
 | **Select** | Enter or GPIO0 |
 | **Escape** | `` ` `` or Backspace |
 
